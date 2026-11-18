@@ -30,6 +30,8 @@ public:
     void cancelAppointment(const std::string& appID);
 
     void updateRecentCache(PatientRecord* patient);
+
+    void clear();
 };
 
 } // namespace Model

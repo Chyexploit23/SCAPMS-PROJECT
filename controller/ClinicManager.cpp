@@ -79,6 +79,16 @@ void ClinicManager::deletePatient(const std::string &patientID)
     database.deletePatient(patientID);
 }
 
+void ClinicManager::clear() {
+    // Clear the database records, appointments, and delete patient memory
+    database.clear();
+
+    // Empty the waiting queue properly since std::queue has no .clear() method
+    while (!waitingQueue.empty()) {
+        waitingQueue.pop();
+    }
+}
+
 void ClinicManager::enqueuePatient(Model::PatientRecord *patient)
 {
     if (patient) waitingQueue.push(patient);
@@ -92,6 +102,18 @@ Model::PatientRecord *ClinicManager::dequeuePatient()
     return next;
 }
 
+std::vector<Model::PatientRecord *> ClinicManager::getWaitingQueueSnapshot() const
+{
+    std::vector<Model::PatientRecord *> snapshot;
+    std::queue<Model::PatientRecord *> tempQueue = waitingQueue;
+    
+    while (!tempQueue.empty()) {
+        snapshot.push_back(tempQueue.front());
+        tempQueue.pop();
+    }
+    
+    return snapshot;
+}
 void ClinicManager::undoLastOperation()
 {
     if (undoStack.empty()) return;

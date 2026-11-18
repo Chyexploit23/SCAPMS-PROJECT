@@ -24,8 +24,8 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
-    ~MainWindow() override = default;
+    explicit MainWindow(Controller::ClinicManager &sharedManager, QWidget *parent = nullptr);
+    ~MainWindow();
 
 private slots:
     void onAddPatientClicked();
@@ -40,9 +40,12 @@ private slots:
     void onNavigationClicked();
     void showFindPatient();
     void showAbout();
+    void onFileNew();
+    void onFileSave();
+    void onFileLoad();
 
 private:
-    Controller::ClinicManager clinicManager;
+    Controller::ClinicManager &clinicManager;
     QStackedWidget *pageStack = nullptr;
     QWidget *dashboardPage = nullptr;
     QWidget *patientPage = nullptr;

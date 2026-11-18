@@ -31,6 +31,7 @@ public:
     Model::ClinicDatabase &getDatabase() { return database; }
     std::queue<Model::PatientRecord *> &getWaitingQueue() { return waitingQueue; }
 
+    std::vector<Model::PatientRecord *> getWaitingQueueSnapshot() const;
     void registerPatient(Model::PatientRecord *patient);
     void deletePatient(const std::string &patientID);
 
@@ -38,6 +39,8 @@ public:
     Model::PatientRecord *dequeuePatient();
 
     void undoLastOperation();
+
+    void clear();
 };
 
 } // namespace Controller

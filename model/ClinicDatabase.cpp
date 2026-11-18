@@ -11,10 +11,7 @@ ClinicDatabase::ClinicDatabase() : cacheCount(0) {
 }
 
 ClinicDatabase::~ClinicDatabase() {
-    for (auto p : patients) {
-        delete p;
-    }
-    patients.clear();
+    clear();
 }
 
 void ClinicDatabase::addPatient(PatientRecord* patient) {
@@ -75,6 +72,23 @@ void ClinicDatabase::cancelAppointment(const std::string& appID) {
             break;
         }
     }
+}
+
+void ClinicDatabase::clear() {
+    // Delete heap-allocated patient records
+    for (auto p : patients) {
+        delete p;
+    }
+    patients.clear();
+
+    // Clear appointments so they don't linger
+    appointments.clear();
+
+    // Reset the recent patients cache
+    for (int i = 0; i < CACHE_SIZE; ++i) {
+        recentPatientsCache[i] = nullptr;
+    }
+    cacheCount = 0;
 }
 
 void ClinicDatabase::updateRecentCache(PatientRecord* patient) {

@@ -10,6 +10,8 @@ public:
     static std::string generate(const std::string& prefix);
     static std::string generatePatientID();
     static std::string generateAppointmentID();
+
+    static void seedSequence(unsigned long long val);
 };
 
 } // namespace Utils

@@ -35,6 +35,12 @@
 #include <numeric>
 #include <QStyle>
 #include <utility>
+#include <QFileDialog>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QMessageBox>
 
 namespace {
 const QString Blue = QStringLiteral("#347fe5");
@@ -133,7 +139,7 @@ private:
     QString m_centerText;
 };
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
+MainWindow::MainWindow(Controller::ClinicManager &sharedManager, QWidget *parent) : QMainWindow(parent), clinicManager(sharedManager)
 {
     setWindowTitle("SCAPMS | Smart Clinic Management");
     setMinimumSize(1050, 700);
@@ -208,20 +214,220 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 void MainWindow::createMenuBar()
 {
     auto *fileMenu = menuBar()->addMenu("&File");
-    auto *saveAction = fileMenu->addAction("&Save"); saveAction->setShortcut(QKeySequence::Save);
-    connect(saveAction, &QAction::triggered, this, [this] { QMessageBox::information(this, "Save", "Persistence is not yet connected in this repository."); });
+
+    // 1. New Action -> Connected to onFileNew slot
+    auto *newAction = fileMenu->addAction("&New");
+    newAction->setShortcut(QKeySequence::New);
+    connect(newAction, &QAction::triggered, this, &MainWindow::onFileNew);
+
+    // 2. Load Action -> Connected to onFileLoad slot
+    auto *loadAction = fileMenu->addAction("&Load...");
+    loadAction->setShortcut(QKeySequence::Open);
+    connect(loadAction, &QAction::triggered, this, &MainWindow::onFileLoad);
+
+    // 3. Save Action -> Connected to onFileSave slot
+    auto *saveAction = fileMenu->addAction("&Save"); 
+    saveAction->setShortcut(QKeySequence::Save);
+    connect(saveAction, &QAction::triggered, this, &MainWindow::onFileSave);
+
     fileMenu->addSeparator();
-    auto *exitAction = fileMenu->addAction("E&xit"); exitAction->setShortcut(QKeySequence::Quit);
+
+    // 4. Exit Action -> Closes window
+    auto *exitAction = fileMenu->addAction("E&xit"); 
+    exitAction->setShortcut(QKeySequence::Quit);
     connect(exitAction, &QAction::triggered, this, &QWidget::close);
+
+    // Edit Menu
     auto *editMenu = menuBar()->addMenu("&Edit");
-    auto *undoAction = editMenu->addAction("Undo last administrative operation"); undoAction->setShortcut(QKeySequence::Undo);
+    auto *undoAction = editMenu->addAction("Undo last administrative operation"); 
+    undoAction->setShortcut(QKeySequence::Undo);
     connect(undoAction, &QAction::triggered, this, &MainWindow::onUndoClicked);
+
+    // Reports Menu
     auto *reportsMenu = menuBar()->addMenu("&Reports");
     auto *analyticsAction = reportsMenu->addAction("Open analytics");
     connect(analyticsAction, &QAction::triggered, this, [this] { navigateTo(5); });
+
+    // Help Menu
     auto *helpMenu = menuBar()->addMenu("&Help");
     auto *aboutAction = helpMenu->addAction("About SCAPMS");
     connect(aboutAction, &QAction::triggered, this, &MainWindow::showAbout);
+}
+
+void MainWindow::onFileNew()
+{
+    auto reply = QMessageBox::question(
+        this, 
+        "New Session", 
+        "Starting a new session will clear all current records, appointments, and queues in memory. Are you sure?",
+        QMessageBox::Yes | QMessageBox::No
+    );
+
+    if (reply == QMessageBox::Yes) {
+        // Wipe everything clean in the backend
+        clinicManager.clear(); 
+
+        // Refresh ALL UI components and tables
+        refreshDashboard();
+        refreshWaitingQueue();
+        refreshPatientTable();
+        refreshAppointmentTable();
+
+        QMessageBox::information(this, "New Session", "Started a clean session successfully.");
+    }
+}
+
+void MainWindow::onFileSave()
+{
+    QString filePath = QFileDialog::getSaveFileName(
+        this, "Save Clinic Data", "", "JSON Files (*.json)"
+    );
+
+    if (filePath.isEmpty()) return; 
+
+    QJsonObject rootObj;
+
+    //Save Patients
+    QJsonArray patientsArray;
+    auto allPatients = clinicManager.getDatabase().getPatients(); 
+    for (auto *patient : allPatients) {
+        if (!patient) continue;
+        QJsonObject pObj;
+        pObj["id"] = QString::fromStdString(patient->getPatientID());
+        pObj["name"] = QString::fromStdString(patient->getName());
+        pObj["age"] = patient->getAge();
+        pObj["contact"] = QString::fromStdString(patient->getContactInfo());
+        pObj["type"] = QString::fromStdString(patient->getPatientType());
+        patientsArray.append(pObj);
+    }
+    rootObj["patients"] = patientsArray;
+
+    //Save Appointments 
+    QJsonArray appointmentsArray;
+    auto allAppointments = clinicManager.getDatabase().getAppointments(); // Adjust method name if yours differs
+    for (const auto &app : allAppointments) {
+        QJsonObject appObj;
+        appObj["appointmentID"] = QString::fromStdString(app.getAppointmentID());
+        appObj["patientID"] = QString::fromStdString(app.getPatientID());
+        appObj["date"] = QString::fromStdString(app.getAppointmentDate()); 
+        appObj["time"] = QString::fromStdString(app.getAppointmentTime());     
+        appObj["reason"] = QString::fromStdString(app.getReason());         
+        appObj["status"] = QString::fromStdString(app.getStatus());
+        appointmentsArray.append(appObj);
+    }
+    rootObj["appointments"] = appointmentsArray;
+
+    // Save Waiting Queue IDs
+    QJsonArray waitingQueueArray;
+    std::queue<Model::PatientRecord*> tempQueue = clinicManager.getWaitingQueue(); 
+    while (!tempQueue.empty()) {
+        auto *patient = tempQueue.front();
+        tempQueue.pop();
+        if (patient) {
+            waitingQueueArray.append(QString::fromStdString(patient->getPatientID()));
+        }
+    }
+    rootObj["waitingQueue"] = waitingQueueArray;
+
+    // Write to file
+    QJsonDocument doc(rootObj);
+    QFile file(filePath);
+    if (file.open(QIODevice::WriteOnly)) {
+        file.write(doc.toJson());
+        file.close();
+        QMessageBox::information(this, "Success", "Clinic data, appointments, and records successfully saved!");
+    } else {
+        QMessageBox::critical(this, "Error", "Could not open file for writing.");
+    }
+}
+
+void MainWindow::onFileLoad()
+{
+    QString filePath = QFileDialog::getOpenFileName(
+        this, "Load Clinic Data", "", "JSON Files (*.json)"
+    );
+
+    if (filePath.isEmpty()) return; 
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::critical(this, "Error", "Could not open file for reading.");
+        return;
+    }
+
+    QByteArray fileData = file.readAll();
+    file.close();
+
+    QJsonDocument doc = QJsonDocument::fromJson(fileData);
+    if (doc.isNull() || !doc.isObject()) {
+        QMessageBox::critical(this, "Error", "Invalid or corrupted JSON file format.");
+        return;
+    }
+
+    // Clear current memory before loading fresh data
+    clinicManager.clear();
+
+    QJsonObject rootObj = doc.object();
+
+    // Load Patients
+    QJsonArray patientsArray = rootObj["patients"].toArray();
+    for (const auto &val : patientsArray) {
+        QJsonObject pObj = val.toObject();
+        std::string id = pObj["id"].toString().toStdString();
+        std::string name = pObj["name"].toString().toStdString();
+        int age = pObj["age"].toInt();
+        std::string contact = pObj["contact"].toString().toStdString();
+        std::string type = pObj["type"].toString().toStdString();
+
+        Model::PatientRecord* newPatient = nullptr;
+        if (type == "General") {
+            newPatient = new Model::GeneralPatient(id, name, age, contact);
+        } else if (type == "Emergency") {
+            newPatient = new Model::EmergencyPatient(id, name, age, contact);
+        } else {
+            newPatient = new Model::FollowUpPatient(id, name, age, contact);
+        }
+
+        if (newPatient) {
+            clinicManager.getDatabase().addPatient(newPatient);
+        }
+    }
+
+    // Load Appointments 
+    QJsonArray appointmentsArray = rootObj["appointments"].toArray();
+    for (const auto &val : appointmentsArray) {
+        QJsonObject appObj = val.toObject();
+        std::string appId = appObj["appointmentID"].toString().toStdString();
+        std::string patientId = patientId = appObj["patientID"].toString().toStdString();
+        std::string date = appObj["date"].toString().toStdString();
+        std::string status = appObj["status"].toString().toStdString();
+        std::string time = appObj["time"].toString().toStdString();
+        std::string reason = appObj["reason"].toString().toStdString();
+
+        Model::Appointment app(appId, patientId, date, time, reason, status); 
+        clinicManager.getDatabase().addAppointment(app);
+    }  
+    
+    // Load Waiting Queue IDs
+    QJsonArray waitingQueueArray = rootObj["waitingQueue"].toArray();
+    for (const auto &val : waitingQueueArray) {
+        std::string patientId = val.toString().toStdString();
+        
+        // Find the patient object in the database using their ID
+        Model::PatientRecord* patient = clinicManager.getDatabase().findPatientByID(patientId);
+        if (patient) {
+            // Push them back into the active waiting queue manager
+            clinicManager.enqueuePatient(patient);
+        }
+    }
+
+    // Refresh all UI views
+    refreshDashboard();
+    refreshPatientTable();
+    refreshAppointmentTable();
+    refreshWaitingQueue();
+
+    QMessageBox::information(this, "Success", "Clinic data and appointments successfully loaded from JSON!");
 }
 
 QWidget *MainWindow::createSidebar()
@@ -396,7 +602,7 @@ QWidget *MainWindow::createPatientPage()
     idInput = new QLineEdit; idInput->setPlaceholderText("e.g. P011");
     nameInput = new QLineEdit; nameInput->setPlaceholderText("Patient full name");
     ageInput = new QLineEdit; ageInput->setPlaceholderText("1–120");
-    contactInput = new QLineEdit; contactInput->setPlaceholderText("Phone");
+    contactInput = new QLineEdit; contactInput->setPlaceholderText("Contact");
     typeCombo = new QComboBox; typeCombo->addItems({"General", "Emergency", "Follow-Up"});
     formLayout->addRow("Patient ID", idInput); formLayout->addRow("Full name", nameInput); formLayout->addRow("Age", ageInput);
     formLayout->addRow("Contact", contactInput); formLayout->addRow("Category", typeCombo); form->addLayout(formLayout);
@@ -432,14 +638,52 @@ QWidget *MainWindow::createAppointmentPage()
 
 QWidget *MainWindow::createQueuePage()
 {
-    auto *page = new QWidget; auto *layout = new QVBoxLayout(page); layout->setContentsMargins(20, 18, 20, 18); layout->setSpacing(14);
+    auto *page = new QWidget; 
+    auto *layout = new QVBoxLayout(page); 
+    layout->setContentsMargins(20, 18, 20, 18); 
+    layout->setSpacing(14);
+    
     layout->addWidget(makeLabel("Waiting queue", 18, true));
-    auto *controls = makeCard(); auto *row = new QHBoxLayout(controls); row->setContentsMargins(12, 10, 12, 10);
-    queuePatientInput = new QLineEdit; queuePatientInput->setPlaceholderText("Patient ID to add to queue");
-    auto *enqueueButton = makeButton("Add to waiting queue", true); connect(enqueueButton, &QPushButton::clicked, this, &MainWindow::onEnqueuePatientClicked);
-    auto *callButton = makeButton("Call next patient"); connect(callButton, &QPushButton::clicked, this, &MainWindow::onCallNextClicked);
-    row->addWidget(queuePatientInput, 1); row->addWidget(enqueueButton); row->addWidget(callButton); layout->addWidget(controls);
-    waitingList = new QListWidget; layout->addWidget(withTitle("Patients waiting for consultation · first in, first served", waitingList), 1);
+    
+    auto *controls = makeCard(); 
+    auto *row = new QHBoxLayout(controls); 
+    row->setContentsMargins(12, 10, 12, 10);
+    
+    queuePatientInput = new QLineEdit; 
+    queuePatientInput->setPlaceholderText("Patient ID to add to queue");
+    
+    auto *enqueueButton = makeButton("Add to waiting queue", true); 
+    connect(enqueueButton, &QPushButton::clicked, this, &MainWindow::onEnqueuePatientClicked);
+    
+    auto *callButton = makeButton("Call next patient"); 
+    connect(callButton, &QPushButton::clicked, this, &MainWindow::onCallNextClicked);
+    
+    row->addWidget(queuePatientInput, 1); 
+    row->addWidget(enqueueButton); 
+    row->addWidget(callButton); 
+    layout->addWidget(controls);
+    
+    // Create and style the list widget so items are clearly visible
+    waitingList = new QListWidget;
+    waitingList->setStyleSheet(
+        "QListWidget { "
+        "   background-color: #ffffff; "
+        "   border: 1px solid #cccccc; "
+        "   border-radius: 6px; "
+        "}"
+        "QListWidget::item { "
+        "   color: #222222; "
+        "   padding: 8px; "
+        "   border-bottom: 1px solid #eeeeee; "
+        "}"
+        "QListWidget::item:selected { "
+        "   background-color: #0078d7; "
+        "   color: white; "
+        "}"
+    );
+    
+    layout->addWidget(withTitle("Patients waiting for consultation · first in, first served", waitingList), 1);
+    
     return page;
 }
 
@@ -592,18 +836,43 @@ void MainWindow::onSortClicked()
 
 void MainWindow::onScheduleAppointmentClicked()
 {
-    const QString patientId = appointmentPatientInput->text().trimmed();
-    if (!clinicManager.getDatabase().findPatientByID(patientId.toStdString())) { showError("Register or select a valid patient ID before scheduling."); return; }
-    if (appointmentReasonInput->text().trimmed().isEmpty()) { showError("Enter a reason for the appointment."); return; }
+    const QString patientId = appointmentPatientInput->text().trimmed().toUpper();
+    
+    if (!clinicManager.getDatabase().findPatientByID(patientId.toStdString())) { 
+        showError("Register or select a valid patient ID before scheduling."); 
+        return; 
+    }
+    
+    QString rawReason = appointmentReasonInput->text().trimmed();
+    if (rawReason.isEmpty()) { 
+        showError("Enter a reason for the appointment."); 
+        return; 
+    }
+
+    QString formattedReason = rawReason.toLower();
+    formattedReason[0] = formattedReason[0].toUpper();
+    
     try {
         const auto &appointments = clinicManager.getDatabase().getAppointments();
         const QString id = QString("A%1").arg(static_cast<qulonglong>(appointments.size() + 1), 3, 10, QLatin1Char('0'));
-        clinicManager.getDatabase().addAppointment(Model::Appointment(id.toStdString(), patientId.toStdString(),
-            appointmentDateInput->date().toString("yyyy-MM-dd").toStdString(), appointmentTimeInput->time().toString("HH:mm").toStdString(),
-            appointmentReasonInput->text().trimmed().toStdString(), "Pending"));
-        appointmentPatientInput->clear(); appointmentReasonInput->clear();
-        refreshAppointmentTable(); refreshDashboard(); refreshReports();
-    } catch (const std::exception &exception) { showError(QString::fromUtf8(exception.what())); }
+        
+        clinicManager.getDatabase().addAppointment(Model::Appointment(
+            id.toStdString(), 
+            patientId.toStdString(),
+            appointmentDateInput->date().toString("yyyy-MM-dd").toStdString(), 
+            appointmentTimeInput->time().toString("HH:mm").toStdString(),
+            formattedReason.toStdString(), 
+            "Pending"
+        ));
+            
+        appointmentPatientInput->clear(); 
+        appointmentReasonInput->clear();
+        refreshAppointmentTable(); 
+        refreshDashboard(); 
+        refreshReports();
+    } catch (const std::exception &exception) { 
+        showError(QString::fromUtf8(exception.what())); 
+    }
 }
 
 void MainWindow::onCancelAppointmentClicked()
@@ -616,11 +885,31 @@ void MainWindow::onCancelAppointmentClicked()
 
 void MainWindow::onEnqueuePatientClicked()
 {
-    const QString id = queuePatientInput->text().trimmed();
+    const QString id = queuePatientInput->text().trimmed().toUpper();
     Model::PatientRecord *patient = clinicManager.getDatabase().findPatientByID(id.toStdString());
-    if (!patient) { showError("Enter a registered patient ID."); return; }
-    clinicManager.enqueuePatient(patient); queuePatientInput->clear();
-    refreshWaitingQueue(); refreshDashboard();
+    
+    if (!patient) { 
+        qDebug() << "FAILED: Patient ID not found in database:" << id;
+        showError("Enter a registered patient ID."); 
+        return; 
+    }
+
+    // 1. Check if the patient is already in the waiting queue snapshot
+    std::vector<Model::PatientRecord *> waitingPatients = clinicManager.getWaitingQueueSnapshot();
+    for (auto *p : waitingPatients) {
+        if (p && p->getPatientID() == patient->getPatientID()) {
+            qDebug() << "FAILED: Patient is already in the waiting queue:" << id;
+            showError("This patient is already in the waiting queue.");
+            return; // Stops them from being added again
+        }
+    }
+
+    qDebug() << "SUCCESS: Found patient, adding to queue:" << QString::fromStdString(patient->getName());
+    
+    clinicManager.enqueuePatient(patient); 
+    queuePatientInput->clear();
+    refreshWaitingQueue(); 
+    refreshDashboard();
 }
 
 void MainWindow::onCallNextClicked()
@@ -636,7 +925,8 @@ void MainWindow::showFindPatient()
     bool ok = false;
     const QString id = QInputDialog::getText(this, "Find patient", "Patient ID", QLineEdit::Normal, {}, &ok);
     if (!ok || id.trimmed().isEmpty()) return;
-    auto *patient = clinicManager.getDatabase().findPatientByID(id.trimmed().toStdString());
+    const QString upperId = id.trimmed().toUpper();
+    auto *patient = clinicManager.getDatabase().findPatientByID(upperId.toStdString());
     if (!patient) QMessageBox::information(this, "Patient not found", "No patient matches that ID.");
     else QMessageBox::information(this, "Patient found", QString("%1 · %2 · %3").arg(QString::fromStdString(patient->getPatientID()), QString::fromStdString(patient->getName()), QString::fromStdString(patient->getPatientType())));
 }
@@ -694,15 +984,26 @@ void MainWindow::refreshWaitingQueue()
 {
     if (!waitingList) return;
     waitingList->clear();
-    auto queue = clinicManager.getWaitingQueue();
+    
+    // Use the vector snapshot directly—no popping needed!
+    std::vector<Model::PatientRecord *> waitingPatients = clinicManager.getWaitingQueueSnapshot();
     int position = 1;
-    while (!queue.empty()) {
-        auto *patient = queue.front(); queue.pop();
-        waitingList->addItem(QString("%1     %2     ·     %3").arg(position++, 2, 10, QLatin1Char('0')).arg(QString::fromStdString(patient->getPatientID()), QString::fromStdString(patient->getName())));
-    }
-    if (queueCountValue) queueCountValue->setText(QString::number(position - 1));
-}
+    
+    for (auto *patient : waitingPatients) {
+        if (!patient) continue;
 
+        QString displayText = QString("%1     %2     ·     %3")
+            .arg(position++, 2, 10, QLatin1Char('0'))
+            .arg(QString::fromStdString(patient->getPatientID()))
+            .arg(QString::fromStdString(patient->getName()));
+
+        waitingList->addItem(displayText);
+    }
+    
+    if (queueCountValue) {
+        queueCountValue->setText(QString::number(waitingPatients.size()));
+    }
+}
 void MainWindow::refreshDashboard()
 {
     if (!demographicsChart) return;
@@ -793,3 +1094,6 @@ void MainWindow::showError(const QString &message)
 {
     QMessageBox::warning(this, "SCAPMS", message);
 }
+
+MainWindow::~MainWindow()
+{ }
