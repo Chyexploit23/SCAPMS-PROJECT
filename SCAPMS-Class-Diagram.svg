@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1830" viewBox="0 0 2400 1830">
+<defs>
+  <marker id="inherit" markerWidth="16" markerHeight="16" refX="14" refY="8" orient="auto" markerUnits="userSpaceOnUse"><path d="M1,1 L14,8 L1,15 Z" fill="#fff" stroke="#475569" stroke-width="2"/></marker>
+  <marker id="diamond" markerWidth="18" markerHeight="18" refX="2" refY="9" orient="auto" markerUnits="userSpaceOnUse"><path d="M2,9 L9,2 L16,9 L9,16 Z" fill="#334155" stroke="#334155" stroke-width="1.5"/></marker>
+  <marker id="arrow" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M1,1 L12,7 L1,13" fill="none" stroke="#475569" stroke-width="2"/></marker>
+  <marker id="arrowStart" markerWidth="14" markerHeight="14" refX="2" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M12,1 L1,7 L12,13" fill="none" stroke="#475569" stroke-width="2"/></marker>
+  <style>
+   text{font-family:Inter,Arial,sans-serif;fill:#172033}.title{font-size:34px;font-weight:750}.subtitle{font-size:17px;fill:#526078}.pkg{font-size:19px;font-weight:750;letter-spacing:1px;fill:#344563}.className{font-size:18px;font-weight:700}.stereo{font-size:13px;font-style:italic;fill:#526078}.member{font-size:14px}.method{font-size:13.5px}.small{font-size:13px;fill:#46536a}.tiny{font-size:12px;fill:#46536a}.edgeLabel{font-size:12.5px;font-weight:650;fill:#344563;paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round}.noteTitle{font-size:15px;font-weight:750}.noteText{font-size:13px;fill:#344054}
+   .band{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2;rx:18}.card{fill:#fff;stroke:#65758b;stroke-width:1.7;rx:9}.headModel{fill:#e9f2ff}.headControl{fill:#e9f8f1}.headGui{fill:#fff3df}.headUtils{fill:#f3edff}.rule{stroke:#aab6c5;stroke-width:1}.edge{fill:none;stroke:#475569;stroke-width:2.1}.dependency{fill:none;stroke:#64748b;stroke-width:2;stroke-dasharray:8 6}.note{fill:#fffdf3;stroke:#d7c88a;stroke-width:1.5;rx:10}
+  </style>
+</defs>
+<rect width="2400" height="1830" fill="#fff"/>
+<text x="50" y="52" class="title">SCAPMS — UML Class Diagram</text>
+<text x="50" y="82" class="subtitle">Repository-grounded view of the implemented Qt/C++ system, annotated against the COS202 lab-manual requirements</text>
+<!-- relation legend -->
+<line x1="60" y1="112" x2="115" y2="112" class="edge" marker-end="url(#inherit)"/><text x="125" y="117" class="small">Inheritance / generalization</text>
+<line x1="360" y1="112" x2="415" y2="112" class="edge" marker-start="url(#diamond)"/><text x="425" y="117" class="small">Composition / owned part</text>
+<line x1="660" y1="112" x2="715" y2="112" class="edge" marker-end="url(#arrow)"/><text x="725" y="117" class="small">Association / reference</text>
+<line x1="950" y1="112" x2="1005" y2="112" class="dependency" marker-end="url(#arrow)"/><text x="1015" y="117" class="small">Dependency / uses</text>
+<text x="1290" y="117" class="small">+ public   − private   # protected   «abstract» abstract class</text>
+<!-- package backgrounds -->
+<rect x="35" y="140" width="1130" height="815" class="band"/><text x="60" y="174" class="pkg">MODEL</text>
+<rect x="1200" y="140" width="1165" height="815" class="band"/><text x="1225" y="174" class="pkg">GUI · Qt Widgets</text>
+<rect x="35" y="990" width="1410" height="745" class="band"/><text x="60" y="1025" class="pkg">CONTROLLER</text>
+<rect x="1480" y="990" width="885" height="745" class="band"/><text x="1505" y="1025" class="pkg">UTILITIES / SUPPORT</text>
+<!-- relationship lines behind the class cards -->
+<!-- Three inheritance links to abstract PatientRecord -->
+<path d="M435 252 H415 V310 H365" class="edge" marker-end="url(#inherit)"/>
+<path d="M435 482 H405 V342 H365" class="edge" marker-end="url(#inherit)"/>
+<path d="M435 712 H395 V374 H365" class="edge" marker-end="url(#inherit)"/>
+<!-- ClinicDatabase owns its patient records; routed around the subtype cards -->
+<path d="M780 405 H738 V900 H220 V460" class="edge" marker-start="url(#diamond)"/>
+<text x="500" y="889" class="edgeLabel">1  ◆────────  0..*  patients</text>
+<!-- ClinicDatabase composes its appointment values -->
+<path d="M945 565 V620" class="edge" marker-start="url(#diamond)"/>
+<text x="963" y="599" class="edgeLabel">0..*</text>
+<!-- Appointment's patientID is a logical ID association, not a stored PatientRecord pointer -->
+<path d="M1110 765 H1175 V925 H365 V460" class="edge" marker-end="url(#arrow)"/>
+<text x="795" y="914" class="edgeLabel">0..* Appointment → 1 PatientRecord (patientID string; logical association)</text>
+<!-- Cross-layer connections: MainWindow shares, does not own, ClinicManager -->
+<path d="M1625 610 H1665 V968 H1160 V1080" class="edge" marker-end="url(#arrow)"/>
+<text x="1370" y="960" class="edgeLabel">shared ClinicManager reference</text>
+<!-- AppointmentPanel owns its controller; that controller references the database -->
+<path d="M1900 885 V978 H670 V1080" class="edge" marker-start="url(#diamond)"/>
+<text x="1270" y="971" class="edgeLabel">AppointmentController member</text>
+<path d="M670 1080 V970 H1155 V400 H1110" class="dependency" marker-end="url(#arrow)"/>
+<text x="1015" y="963" class="edgeLabel">ClinicDatabase reference</text>
+<!-- PatientPanel's manager reference, routed around the GUI cards -->
+<path d="M1855 630 V945 H1388 V1060 H1335 V1080" class="edge" marker-end="url(#arrow)"/>
+<text x="1730" y="937" class="edgeLabel">manager reference</text>
+<!-- MainWindow creates/uses the chart widget -->
+<path d="M1640 292 H1710" class="edge" marker-start="url(#diamond)"/>
+<!-- ClinicManager contains its database and administrative-operation stack -->
+<path d="M1140 1410 V1450" class="edge" marker-start="url(#diamond)"/>
+<text x="1154" y="1438" class="tiny">undoStack values</text>
+<!-- Model cards -->
+<g>
+ <rect x="80" y="245" width="285" height="215" class="card"/><path d="M80 254 Q80 245 89 245 H356 Q365 245 365 254 V300 H80 Z" class="headModel"/>
+ <text x="222" y="266" text-anchor="middle" class="stereo">«abstract»</text><text x="222" y="289" text-anchor="middle" class="className">PatientRecord</text><line x1="80" y1="300" x2="365" y2="300" class="rule"/>
+ <text x="96" y="323" class="member"># patientID: string</text><text x="96" y="343" class="member"># name: string</text><text x="96" y="363" class="member"># age: int</text><text x="96" y="383" class="member"># contactInfo: string</text><line x1="80" y1="393" x2="365" y2="393" class="rule"/>
+ <text x="96" y="415" class="method">+ getPatientType(): string {abstract}</text><text x="96" y="435" class="method">+ displayDetails(): void {abstract}</text><text x="96" y="453" class="tiny">+ virtual destructor</text>
+</g>
+<g>
+ <rect x="435" y="165" width="290" height="175" class="card"/><path d="M435 174 Q435 165 444 165 H716 Q725 165 725 174 V215 H435 Z" class="headModel"/><text x="580" y="196" text-anchor="middle" class="className">GeneralPatient</text><line x1="435" y1="215" x2="725" y2="215" class="rule"/>
+ <text x="450" y="239" class="member">− primaryPhysician: string</text><line x1="435" y1="253" x2="725" y2="253" class="rule"/><text x="450" y="277" class="method">+ getPatientType() override</text><text x="450" y="299" class="method">+ displayDetails() override</text><text x="450" y="321" class="method">+ getPrimaryPhysician()</text>
+</g>
+<g>
+ <rect x="435" y="395" width="290" height="175" class="card"/><path d="M435 404 Q435 395 444 395 H716 Q725 395 725 404 V445 H435 Z" class="headModel"/><text x="580" y="426" text-anchor="middle" class="className">EmergencyPatient</text><line x1="435" y1="445" x2="725" y2="445" class="rule"/>
+ <text x="450" y="469" class="member">− severityLevel: int</text><line x1="435" y1="483" x2="725" y2="483" class="rule"/><text x="450" y="507" class="method">+ getPatientType() override</text><text x="450" y="529" class="method">+ displayDetails() override</text><text x="450" y="551" class="method">+ getSeverityLevel(): int</text>
+</g>
+<g>
+ <rect x="435" y="625" width="290" height="175" class="card"/><path d="M435 634 Q435 625 444 625 H716 Q725 625 725 634 V675 H435 Z" class="headModel"/><text x="580" y="656" text-anchor="middle" class="className">FollowUpPatient</text><line x1="435" y1="675" x2="725" y2="675" class="rule"/>
+ <text x="450" y="699" class="member">− previousVisitDate: string</text><line x1="435" y1="713" x2="725" y2="713" class="rule"/><text x="450" y="737" class="method">+ getPatientType() override</text><text x="450" y="759" class="method">+ displayDetails() override</text><text x="450" y="781" class="method">+ getPreviousVisitDate()</text>
+</g>
+<g>
+ <rect x="780" y="235" width="330" height="330" class="card"/><path d="M780 244 Q780 235 789 235 H1101 Q1110 235 1110 244 V280 H780 Z" class="headModel"/><text x="945" y="263" text-anchor="middle" class="className">ClinicDatabase</text><line x1="780" y1="280" x2="1110" y2="280" class="rule"/>
+ <text x="795" y="304" class="member">− patients: vector&lt;PatientRecord*&gt;</text><text x="795" y="325" class="member">− appointments: vector&lt;Appointment&gt;</text><text x="795" y="346" class="member">− recentPatientsCache: PatientRecord*[10]</text><line x1="780" y1="360" x2="1110" y2="360" class="rule"/>
+ <text x="795" y="384" class="method">+ addPatient(record)</text><text x="795" y="406" class="method">+ deletePatient(id)</text><text x="795" y="428" class="method">+ findPatientByID(id): PatientRecord*</text><text x="795" y="450" class="method">+ addAppointment(app)</text><text x="795" y="472" class="method">+ cancelAppointment(id)</text><text x="795" y="494" class="method">+ updateRecentCache(record)</text><text x="795" y="516" class="method">+ clear()</text><text x="795" y="546" class="tiny">Owns/deletes patient objects; cache is non-owning.</text>
+</g>
+<g>
+ <rect x="780" y="620" width="330" height="230" class="card"/><path d="M780 629 Q780 620 789 620 H1101 Q1110 620 1110 629 V665 H780 Z" class="headModel"/><text x="945" y="648" text-anchor="middle" class="className">Appointment</text><line x1="780" y1="665" x2="1110" y2="665" class="rule"/>
+ <text x="795" y="689" class="member">− appointmentID: string</text><text x="795" y="709" class="member">− patientID: string</text><text x="795" y="729" class="member">− appointmentDate / Time: string</text><text x="795" y="749" class="member">− reason: string</text><text x="795" y="769" class="member">− status: string</text><line x1="780" y1="779" x2="1110" y2="779" class="rule"/><text x="795" y="802" class="method">+ getters / setters for appointment fields</text><text x="795" y="824" class="tiny">Stored by value in ClinicDatabase.</text>
+</g>
+<!-- GUI cards -->
+<g>
+ <rect x="1240" y="220" width="400" height="390" class="card"/><path d="M1240 229 Q1240 220 1249 220 H1631 Q1640 220 1640 229 V270 H1240 Z" class="headGui"/><text x="1440" y="249" text-anchor="middle" class="className">MainWindow</text><text x="1440" y="267" text-anchor="middle" class="stereo">: QMainWindow</text><line x1="1240" y1="270" x2="1640" y2="270" class="rule"/>
+ <text x="1255" y="294" class="member">− clinicManager: ClinicManager&amp;</text><text x="1255" y="315" class="member">− stacked pages, tables, inputs, charts</text><text x="1255" y="336" class="member">− dashboard / patient / appointment views</text><line x1="1240" y1="348" x2="1640" y2="348" class="rule"/>
+ <text x="1255" y="371" class="method">+ patient add / delete / undo</text><text x="1255" y="392" class="method">+ schedule / cancel appointment</text><text x="1255" y="413" class="method">+ enqueue / call next patient</text><text x="1255" y="434" class="method">+ search / sort / refresh reports</text><text x="1255" y="455" class="method">+ file New / Save / Load handlers</text><text x="1255" y="482" class="tiny">Concrete pages and handlers are implemented here.</text><text x="1255" y="503" class="tiny">Search/report pages are not separate classes.</text><text x="1255" y="546" class="tiny">Does not own the shared manager (main.cpp).</text>
+</g>
+<g>
+ <rect x="1710" y="200" width="260" height="175" class="card"/><path d="M1710 209 Q1710 200 1719 200 H1961 Q1970 200 1970 209 V246 H1710 Z" class="headGui"/><text x="1840" y="228" text-anchor="middle" class="className">DonutChart</text><text x="1840" y="244" text-anchor="middle" class="stereo">: QWidget</text><line x1="1710" y1="246" x2="1970" y2="246" class="rule"/><text x="1725" y="274" class="member">− chart data / labels</text><line x1="1710" y1="287" x2="1970" y2="287" class="rule"/><text x="1725" y="312" class="method">+ setData(...)</text><text x="1725" y="334" class="method">+ custom paintEvent(...)</text><text x="1725" y="359" class="tiny">Defined locally in MainWindow.cpp.</text>
+</g>
+<g>
+ <rect x="1690" y="425" width="350" height="205" class="card"/><path d="M1690 434 Q1690 425 1699 425 H2031 Q2040 425 2040 434 V471 H1690 Z" class="headGui"/><text x="1865" y="453" text-anchor="middle" class="className">PatientPanel</text><text x="1865" y="469" text-anchor="middle" class="stereo">: QWidget</text><line x1="1690" y1="471" x2="2040" y2="471" class="rule"/><text x="1705" y="495" class="member">− clinicManager: ClinicManager&amp;</text><text x="1705" y="516" class="member">− patient form / table / buttons</text><line x1="1690" y1="529" x2="2040" y2="529" class="rule"/><text x="1705" y="553" class="method">+ add / update / delete / load selected</text><text x="1705" y="575" class="method">+ refreshTable()</text><text x="1705" y="606" class="tiny">Separate compiled panel class; MainWindow builds its own view.</text>
+</g>
+<g>
+ <rect x="1690" y="660" width="420" height="225" class="card"/><path d="M1690 669 Q1690 660 1699 660 H2101 Q2110 660 2110 669 V706 H1690 Z" class="headGui"/><text x="1900" y="688" text-anchor="middle" class="className">AppointmentPanel</text><text x="1900" y="704" text-anchor="middle" class="stereo">: QWidget</text><line x1="1690" y1="706" x2="2110" y2="706" class="rule"/><text x="1705" y="730" class="member">− database: ClinicDatabase&amp;</text><text x="1705" y="751" class="member">− appointmentController: AppointmentController</text><text x="1705" y="772" class="member">− patient selector / date / time / reason / table</text><line x1="1690" y1="785" x2="2110" y2="785" class="rule"/><text x="1705" y="809" class="method">+ scheduleAppointment()</text><text x="1705" y="831" class="method">+ cancelSelectedAppointment()</text><text x="1705" y="857" class="tiny">Separate compiled panel class; not instantiated by MainWindow.</text>
+</g>
+<!-- Controller cards -->
+<g>
+ <rect x="80" y="1080" width="350" height="250" class="card"/><path d="M80 1089 Q80 1080 89 1080 H421 Q430 1080 430 1089 V1125 H80 Z" class="headControl"/><text x="255" y="1108" text-anchor="middle" class="className">SearchEngine</text><line x1="80" y1="1125" x2="430" y2="1125" class="rule"/>
+ <text x="95" y="1150" class="method">+ linearSearchByID(...) : static</text><text x="95" y="1173" class="method">+ binarySearchByID(...) : static</text><text x="95" y="1196" class="method">+ recursiveSearchByName(...) : static</text><line x1="80" y1="1210" x2="430" y2="1210" class="rule"/><text x="95" y="1235" class="method">+ selectionSortByName(...) : static</text><text x="95" y="1258" class="method">+ insertionSortByAge(...) : static</text><text x="95" y="1281" class="method">+ quickSortByID(...) : static</text><text x="95" y="1310" class="tiny">Algorithms operate on PatientRecord* collections.</text>
+</g>
+<g>
+ <rect x="480" y="1080" width="380" height="250" class="card"/><path d="M480 1089 Q480 1080 489 1080 H851 Q860 1080 860 1089 V1125 H480 Z" class="headControl"/><text x="670" y="1108" text-anchor="middle" class="className">AppointmentController</text><line x1="480" y1="1125" x2="860" y2="1125" class="rule"/>
+ <text x="495" y="1150" class="member">− database: ClinicDatabase&amp;</text><line x1="480" y1="1164" x2="860" y2="1164" class="rule"/><text x="495" y="1188" class="method">+ scheduleAppointment(...): string</text><text x="495" y="1211" class="method">+ cancelAppointment(id)</text><text x="495" y="1234" class="method">+ getAppointments()</text><text x="495" y="1257" class="method">+ findAppointmentByID(id)</text><text x="495" y="1285" class="tiny">Validates input; generates IDs; delegates storage.</text><text x="495" y="1307" class="tiny">Uses IDGenerator and may throw ClinicException.</text>
+</g>
+<g>
+ <rect x="910" y="1080" width="460" height="330" class="card"/><path d="M910 1089 Q910 1080 919 1080 H1361 Q1370 1080 1370 1089 V1125 H910 Z" class="headControl"/><text x="1140" y="1108" text-anchor="middle" class="className">ClinicManager</text><line x1="910" y1="1125" x2="1370" y2="1125" class="rule"/>
+ <text x="925" y="1150" class="member">− database: ClinicDatabase</text><text x="925" y="1172" class="member">− waitingQueue: queue&lt;PatientRecord*&gt;</text><text x="925" y="1194" class="member">− undoStack: stack&lt;AdminOperation&gt;</text><line x1="910" y1="1207" x2="1370" y2="1207" class="rule"/><text x="925" y="1232" class="method">+ registerPatient(record)</text><text x="925" y="1254" class="method">+ deletePatient(id)</text><text x="925" y="1276" class="method">+ enqueuePatient(record) / dequeuePatient()</text><text x="925" y="1298" class="method">+ getWaitingQueueSnapshot()</text><text x="925" y="1320" class="method">+ undoLastOperation() / clear()</text><text x="925" y="1350" class="tiny">Owns database and queue/stack containers; queued patient</text><text x="925" y="1370" class="tiny">pointers refer to database objects (not queue-owned).</text>
+</g>
+<g>
+ <rect x="945" y="1450" width="410" height="205" class="card"/><path d="M945 1459 Q945 1450 954 1450 H1346 Q1355 1450 1355 1459 V1496 H945 Z" class="headControl"/><text x="1150" y="1478" text-anchor="middle" class="className">AdminOperation</text><text x="1150" y="1494" text-anchor="middle" class="stereo">struct · stored by value in undoStack</text><line x1="945" y1="1496" x2="1355" y2="1496" class="rule"/><text x="960" y="1522" class="member">+ type: OperationType</text><text x="960" y="1543" class="member">+ patientID: string</text><text x="960" y="1564" class="member">+ patientCopy: PatientRecord*</text><text x="960" y="1585" class="member">+ appointment: Appointment</text><text x="960" y="1620" class="tiny">Snapshot pointer is owned/deleted by manager until restored.</text>
+</g>
+<!-- Utilities/support cards -->
+<g>
+ <rect x="1520" y="1080" width="365" height="220" class="card"/><path d="M1520 1089 Q1520 1080 1529 1080 H1876 Q1885 1080 1885 1089 V1125 H1520 Z" class="headUtils"/><text x="1702" y="1108" text-anchor="middle" class="className">IDGenerator</text><line x1="1520" y1="1125" x2="1885" y2="1125" class="rule"/><text x="1535" y="1152" class="method">+ generate(prefix): string {static}</text><text x="1535" y="1176" class="method">+ generatePatientID(): string {static}</text><text x="1535" y="1200" class="method">+ generateAppointmentID(): string {static}</text><text x="1535" y="1224" class="method">+ seedSequence(value) {static}</text><text x="1535" y="1274" class="tiny">Used by AppointmentController; sequence is atomic.</text>
+</g>
+<g>
+ <rect x="1920" y="1080" width="360" height="220" class="card"/><path d="M1920 1089 Q1920 1080 1929 1080 H2271 Q2280 1080 2280 1089 V1125 H1920 Z" class="headUtils"/><text x="2100" y="1108" text-anchor="middle" class="className">ClinicException</text><text x="2100" y="1123" text-anchor="middle" class="stereo">: std::exception</text><line x1="1920" y1="1125" x2="2280" y2="1125" class="rule"/><text x="1935" y="1153" class="member">− message: string</text><line x1="1920" y1="1167" x2="2280" y2="1167" class="rule"/><text x="1935" y="1192" class="method">+ what(): const char* override</text><text x="1935" y="1230" class="tiny">Thrown for invalid model/controller operations;</text><text x="1935" y="1251" class="tiny">caught and shown by GUI panels.</text>
+</g>
+<g>
+ <rect x="1520" y="1340" width="760" height="145" class="note"/><text x="1540" y="1370" class="noteTitle">FileHandler.h — placeholder only</text><text x="1540" y="1396" class="noteText">The header is empty and persistence is not implemented or wired into the running application.</text><text x="1540" y="1420" class="noteText">MainWindow declares New / Save / Load handlers, but this diagram does not imply file persistence.</text><text x="1540" y="1460" class="tiny">main.cpp creates one ClinicManager and passes it by reference to MainWindow.</text>
+</g>
+<!-- Important implementation and assignment caveats -->
+<rect x="50" y="1660" width="2300" height="140" class="note"/>
+<text x="75" y="1690" class="noteTitle">Polymorphism and assignment alignment</text>
+<text x="75" y="1717" class="noteText">Runtime polymorphism: ClinicDatabase stores PatientRecord* to the three concrete subclasses; virtual getPatientType() / displayDetails() are overridden.</text>
+<text x="75" y="1740" class="noteText">The lab manual requests an abstract Appointable interface, but this repository does not implement one: model/Appointable.h instead contains a duplicate Model::Appointment definition and is not built.</text>
+<text x="75" y="1763" class="noteText">The patient–appointment link is currently the appointment's patientID string; appointments are not stored inside individual PatientRecord objects. File persistence is also absent.</text>
+<text x="75" y="1790" class="tiny">Solid diamond = ownership/composition; open triangle = inheritance; hollow arrow = directed association; dashed arrow = dependency. Multiplicities are shown where the stored relationship is explicit.</text>
+</svg>
