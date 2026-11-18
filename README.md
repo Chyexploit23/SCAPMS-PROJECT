@@ -20,7 +20,7 @@ A modern desktop application built with **C++17** and **Qt 6 Widgets** designed 
 
 ## 📸 Screenshots
 
-Project previews and user interface walkthroughs are organized in the [`/screenshots`](./screenshots) directory:
+Project previews and user interface walkthroughs include the:
 * Main Dashboard view
 * Patient & Appointment workflows
 * Search and Queue interfaces
